@@ -30,14 +30,19 @@ class PDFEmbedder:
             )
 
     def embed_pdf(self, pdf_file):
+        # Create a temporary file to save the uploaded PDF
+        with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as temp_file:
+            temp_file.write(pdf_file.getbuffer())  # Write the uploaded file to the temp file
+            temp_file_path = temp_file.name  # Get the path of the temp file
+
         # Load PDF data
-        loader = PyMuPDFLoader(pdf_file) 
+        loader = PyMuPDFLoader(temp_file_path) 
         documents = loader.load()
 
         # If no documents are loaded, try OCR with OpenAI
         if not documents:
             st.warning(f"No extractable text found in '{pdf_file.name}'. Attempting OCR with OpenAI...")
-            documents = self.perform_ocr_with_openai(pdf_file)
+            documents = self.perform_ocr_with_openai(temp_file_path)
 
         # Debugging: Check the number of documents loaded
         st.write(f"Loaded {len(documents)} documents from '{pdf_file.name}'.")
@@ -53,13 +58,13 @@ class PDFEmbedder:
         self.docsearch = Pinecone.from_documents(docs, self.embeddings, index_name=self.index_name)
         return len(docs)
 
-    def perform_ocr_with_openai(self, pdf_file):
+    def perform_ocr_with_openai(self, pdf_file_path):
         # Convert PDF to images and perform OCR using OpenAI
         images = []
         extracted_texts = []
         with tempfile.TemporaryDirectory() as temp_dir:
             # Load PDF and convert each page to an image
-            loader = PyMuPDFLoader(pdf_file)
+            loader = PyMuPDFLoader(pdf_file_path)
             pdf_document = loader.load()
             for i, page in enumerate(pdf_document):
                 image_path = os.path.join(temp_dir, f"page_{i}.png")
