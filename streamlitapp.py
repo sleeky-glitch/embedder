@@ -9,6 +9,7 @@ from PIL import Image
 import openai
 import tempfile
 import os
+import easyocr  # Import EasyOCR
 
 class PDFEmbedder:
     def __init__(self):
@@ -39,10 +40,10 @@ class PDFEmbedder:
         loader = PyMuPDFLoader(temp_file_path) 
         documents = loader.load()
 
-        # If no documents are loaded, try OCR with OpenAI
+        # If no documents are loaded, try OCR with EasyOCR
         if not documents:
-            st.warning(f"No extractable text found in '{pdf_file.name}'. Attempting OCR with OpenAI...")
-            documents = self.perform_ocr_with_openai(temp_file_path)
+            st.warning(f"No extractable text found in '{pdf_file.name}'. Attempting OCR with EasyOCR...")
+            documents = self.perform_ocr_with_easyocr(temp_file_path)
 
         # Debugging: Check the number of documents loaded
         st.write(f"Loaded {len(documents)} documents from '{pdf_file.name}'.")
@@ -58,8 +59,9 @@ class PDFEmbedder:
         self.docsearch = Pinecone.from_documents(docs, self.embeddings, index_name=self.index_name)
         return len(docs)
 
-    def perform_ocr_with_openai(self, pdf_file_path):
-        # Convert PDF to images and perform OCR using OpenAI
+    def perform_ocr_with_easyocr(self, pdf_file_path):
+        # Convert PDF to images and perform OCR using EasyOCR
+        reader = easyocr.Reader(['en'])  # Initialize EasyOCR reader for English
         images = []
         extracted_texts = []
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -71,25 +73,18 @@ class PDFEmbedder:
                 page.save(image_path)  # Save page as image
                 images.append(image_path)
 
-            # Perform OCR on each image using OpenAI
+            # Perform OCR on each image using EasyOCR
             for image_path in images:
-                with open(image_path, "rb") as image_file:
-                    response = openai.Image.create(
-                        file=image_file,
-                        model="text-davinci-003",  # Use the appropriate model
-                        prompt="Extract text from this image.",
-                        n=1,
-                        size="1024x1024"
-                    )
-                    text = response['data'][0]['text']
-                    if text.strip():  # Only add non-empty texts
-                        extracted_texts.append(text)
+                result = reader.readtext(image_path)
+                text = " ".join([res[1] for res in result])  # Extract text from the result
+                if text.strip():  # Only add non-empty texts
+                    extracted_texts.append(text)
 
         return extracted_texts
 
 # Streamlit application
 def main():
-    st.title("PDF Vectorizer with OpenAI OCR")
+    st.title("PDF Vectorizer with EasyOCR")
     st.write("Upload your PDF files to vectorize them using OpenAI embeddings and store them in Pinecone.")
 
     pdf_files = st.file_uploader("Choose PDF files", type="pdf", accept_multiple_files=True)
