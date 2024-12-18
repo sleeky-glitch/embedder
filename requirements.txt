@@ -1,8 +1,9 @@
 streamlit
-langchain
-langchain-openai
+langchain-core
 langchain-community
-python-dotenv
+langchain-openai
 pinecone-client
 PyMuPDF
+Pillow
 easyocr
+openai
