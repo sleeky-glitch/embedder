@@ -94,16 +94,9 @@ def main():
             embedder = PDFEmbedder()
             total_chunks = 0
             for pdf_file in pdf_files:
-                # Save the uploaded file temporarily
-                with open(pdf_file.name, "wb") as f:
-                    f.write(pdf_file.getbuffer())
-
-                # Embed the PDF
-                chunks = embedder.embed_pdf(pdf_file.name)
+                # Embed the PDF directly from the UploadedFile object
+                chunks = embedder.embed_pdf(pdf_file)
                 total_chunks += chunks
-
-                # Optionally, remove the temporary file
-                os.remove(pdf_file.name)
 
             st.success(f"Successfully embedded {total_chunks} document chunks into Pinecone index '{embedder.index_name}'.")
         else:
