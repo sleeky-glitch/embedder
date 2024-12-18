@@ -58,9 +58,6 @@ def main():
                 chunks = embedder.embed_pdf(pdf_file.name)
                 total_chunks += chunks
 
-                # Optionally, remove the temporary file
-                os.remove(pdf_file.name)
-
             st.success(f"Successfully embedded {total_chunks} document chunks into Pinecone index '{embedder.index_name}'.")
         else:
             st.warning("Please upload at least one PDF file.")
