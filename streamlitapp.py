@@ -1,27 +1,18 @@
-import os
 import streamlit as st
 from langchain_core.prompts import PromptTemplate
 from langchain_community.document_loaders import PyMuPDFLoader  
 from langchain_openai import OpenAIEmbeddings
 from langchain_community.vectorstores import Pinecone
-from dotenv import load_dotenv
 from pinecone import Pinecone as PineconeClient, ServerlessSpec  
 from langchain.text_splitter import CharacterTextSplitter
-
-# Load environment variables from .env file
-load_dotenv()
-
-# Set up API keys
-os.environ['OPENAI_API_KEY'] = os.getenv('OPENAI_API_KEY')
-os.environ['PINECONE_API_KEY'] = os.getenv('PINECONE_API_KEY')
 
 class PDFEmbedder:
     def __init__(self):
         self.embeddings = OpenAIEmbeddings()
         self.index_name = "gujpaperembeddings"
 
-        # Initialize Pinecone client
-        self.pc = PineconeClient(api_key=os.getenv('PINECONE_API_KEY')) 
+        # Initialize Pinecone client using st.secrets
+        self.pc = PineconeClient(api_key=st.secrets["PINECONE_API_KEY"]) 
         # Create Pinecone index if it doesn't exist
         if self.index_name not in self.pc.list_indexes().names():
             self.pc.create_index(
